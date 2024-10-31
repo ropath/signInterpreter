@@ -1,7 +1,6 @@
-streamlit
-cv2
-mediapipe
-numpy
-requests
-PIL
-io
+streamlit==1.39.0
+opencv-python==4.10.0.84
+mediapipe==0.10.10
+numpy==1.26.4
+requests==2.32.3
+pillow==10.4.0
