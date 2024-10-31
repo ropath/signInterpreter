@@ -57,8 +57,7 @@ def send_to_api(hand_region):
         img_bytes = BytesIO(buffer)
 
         # Make a request to the API
-        response = requests.post(
-            "http://localhost:8000/predict",
+        response = requests.post("https://sign-interpreter-app-373962339093.europe-west1.run.app/predict",
             files={"file": ("hand_image.jpg", img_bytes, "image/jpeg")}
         )
 
