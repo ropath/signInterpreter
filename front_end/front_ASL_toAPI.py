@@ -7,8 +7,8 @@ from io import BytesIO
 import requests
 import gc
 
-url_api = "https://dmapi-564221756825.europe-west1.run.app"
-#url_api = "https://sign-interpreter-app-373962339093.europe-west1.run.app"
+#url_api = "https://dmapi-564221756825.europe-west1.run.app"
+url_api = "https://sign-interpreter-app-373962339093.europe-west1.run.app"
 
 # Maybe we can try to initialize MediaPipe Hands module outside of functions to avoid repeated instantiation
 @st.cache_resource
