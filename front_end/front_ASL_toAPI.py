@@ -28,7 +28,7 @@ def draw_bounding_rect(use_brect, image, brect):
 def extract_hand(source_image):
     image = np.array(Image.open(source_image).convert("RGB"))
     debug_image = image.copy()
-    image = cv.cvtColor(image, cv.COLOR_RGB2BGR)
+    #image = cv.cvtColor(image, cv.COLOR_RGB2BGR)
     results = hands.process(image)
 
     if results.multi_hand_landmarks is not None:
