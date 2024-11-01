@@ -7,6 +7,9 @@ from io import BytesIO
 import requests
 import gc
 
+url_api = "https://dmapi-564221756825.europe-west1.run.app"
+#url_api = "https://sign-interpreter-app-373962339093.europe-west1.run.app"
+
 # Maybe we can try to initialize MediaPipe Hands module outside of functions to avoid repeated instantiation
 @st.cache_resource
 def load_hand_model():
@@ -51,7 +54,7 @@ def send_to_api(hand_region):
     is_success, buffer = cv.imencode(".jpg", hand_region)
     if is_success:
         img_bytes = BytesIO(buffer)
-        response = requests.post("https://sign-interpreter-app-373962339093.europe-west1.run.app/predict",
+        response = requests.post(url_api +'/predict',
                                  files={"file": ("hand_image.jpg", img_bytes, "image/jpeg")})
 
         if response.status_code == 200:
