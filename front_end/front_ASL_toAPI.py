@@ -7,7 +7,7 @@ from io import BytesIO
 import requests
 
 def calc_bounding_rect(image, landmarks):
-    padding = 60
+    padding = 40
     image_width, image_height = image.shape[1], image.shape[0]
     landmark_array = np.empty((0, 2), int)
 
