@@ -2,11 +2,9 @@ import streamlit as st
 import cv2 as cv
 import mediapipe as mp
 import numpy as np
-import copy
-import os
-import requests  # Import requests to send the image to the API
 from PIL import Image
 from io import BytesIO
+import requests
 
 def calc_bounding_rect(image, landmarks):
     padding = 20
@@ -20,7 +18,7 @@ def calc_bounding_rect(image, landmarks):
         landmark_array = np.append(landmark_array, landmark_point, axis=0)
 
     x, y, w, h = cv.boundingRect(landmark_array)
-    return [x-padding, y-padding, x + w + (padding), y + h + (padding)]
+    return [x-padding, y-padding, x + w + padding, y + h + padding]
 
 def draw_bounding_rect(use_brect, image, brect):
     if use_brect:
@@ -28,35 +26,25 @@ def draw_bounding_rect(use_brect, image, brect):
     return image
 
 def extract_hand(source_image):
-    temp_path = os.path.join("temp_dir", source_image.name)
-    os.makedirs("temp_dir", exist_ok=True)
-
-    with open(temp_path, "wb") as f:
-        f.write(source_image.getbuffer())
-
-    image = cv.imread(temp_path)
-    debug_image = copy.deepcopy(image)
-    image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
-    image.flags.writeable = False
+    image = np.array(Image.open(source_image).convert("RGB"))
+    debug_image = image.copy()
+    image = cv.cvtColor(image, cv.COLOR_RGB2BGR)
     results = hands.process(image)
-    image.flags.writeable = True
 
     if results.multi_hand_landmarks is not None:
         for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
             brect = calc_bounding_rect(debug_image, hand_landmarks)
             x_min, y_min, x_max, y_max = brect
             hand_region = image[y_min+1:y_max, x_min+1:x_max]
-            image = draw_bounding_rect(True, image, brect)
-            return image, hand_region
+            debug_image = draw_bounding_rect(True, debug_image, brect)
+            return debug_image, hand_region
     return None, None
 
 def send_to_api(hand_region):
-    # Convert hand_region (numpy array) to an image file for sending to API
     is_success, buffer = cv.imencode(".jpg", hand_region)
     if is_success:
         img_bytes = BytesIO(buffer)
 
-        # Make a request to the API
         response = requests.post("https://sign-interpreter-app-373962339093.europe-west1.run.app/predict",
             files={"file": ("hand_image.jpg", img_bytes, "image/jpeg")}
         )
@@ -68,7 +56,7 @@ def send_to_api(hand_region):
             st.error("API Error: " + response.json().get("detail", "Unknown error"))
 
 st.title("Show hands!")
-st.write('Take a picture with the computer camera, or upload a file.')
+st.write("Take a picture with the computer camera, or upload a file.")
 
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(static_image_mode=True, max_num_hands=2, min_detection_confidence=0.5, min_tracking_confidence=0.5)
@@ -90,7 +78,6 @@ if hand_region is not None:
     with col2:
         st.image(hand_region, caption="Hand region")
 
-    # Send the hand region to the API and display the result
     prediction = send_to_api(hand_region)
     if prediction:
         st.write(f"Prediction: {prediction['prediction']}")
