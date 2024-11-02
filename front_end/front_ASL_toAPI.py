@@ -88,7 +88,7 @@ if camera_image or uploaded_file:
             with col2:
                 st.image(hand_region, caption="Hand region")
 
-        prediction = send_to_api(hand_region, original_image=np.array(Image.open(source_image).convert("RGB")))
+        prediction = send_to_api(hand_region, original_image=np.array(Image.open(source_image))) #.convert("RGB")))
         if prediction:
             st.write(f"Prediction: {prediction['prediction']}")
             st.write(f"Confidence: {prediction['confidence']:.2f}")
