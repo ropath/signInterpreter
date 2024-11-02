@@ -26,6 +26,9 @@ if camera_image or uploaded_file:
     source_image = camera_image if camera_image else uploaded_file
     img = Image.open(source_image).convert("RGB")
     
+    # Display the uploaded image
+    st.image(img, caption="Uploaded Image", use_column_width=True)
+
     # Convert to bytes for API
     img_bytes = BytesIO()
     img.save(img_bytes, format="JPEG")
@@ -42,3 +45,4 @@ if camera_image or uploaded_file:
 
 # Free up memory manually
 gc.collect()
+
