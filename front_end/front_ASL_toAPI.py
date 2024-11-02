@@ -51,23 +51,25 @@ def extract_hand(source_image):
     return image, None
 
 def send_to_api(hand_region, original_image=None):
-    if hand_region is not None:
-        is_success, buffer = cv.imencode(".jpg", hand_region)
+    image_to_send = hand_region if hand_region is not None else original_image
+
+    # Use PIL to encode to JPEG in memory
+    pil_image = Image.fromarray(image_to_send)
+    img_bytes = BytesIO()
+    pil_image.save(img_bytes, format="JPEG")
+    img_bytes.seek(0)
+
+    # Send the image bytes to the API
+    response = requests.post(url_api + '/predict',
+                             files={"file": ("hand_image.jpg", img_bytes, "image/jpeg")})
+
+    if response.status_code == 200:
+        return response.json()
     else:
-        is_success, buffer = cv.imencode(".jpg", original_image)
-
-    if is_success:
-        img_bytes = BytesIO(buffer)
-        response = requests.post(url_api + '/predict',
-                                 files={"file": ("hand_image.jpg", img_bytes, "image/jpeg")})
-
-        if response.status_code == 200:
-            return response.json()
-        else:
-            st.error("API Error: " + response.json().get("detail", "Unknown error"))
-            if hand_region is not None and original_image is not None:
-                st.write("Retrying with original image.")
-                return send_to_api(None, original_image)
+        st.error("API Error: " + response.json().get("detail", "Unknown error"))
+        if hand_region is not None and original_image is not None:
+            st.write("Retrying with original image.")
+            return send_to_api(None, original_image)
 
 st.title("Show hands!")
 st.write("Take a picture with the computer camera, or upload a file.")
