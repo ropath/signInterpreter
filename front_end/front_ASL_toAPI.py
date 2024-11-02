@@ -37,7 +37,7 @@ def resize_image(image, max_dim=640):
 
 def extract_hand(source_image):
     image = np.array(Image.open(source_image).convert("RGB"))
-    image = resize_image(image)  # Resize for memory optimization
+    #image = resize_image(image)  # Resize for memory optimization
     results = hands.process(image)
 
     if results.multi_hand_landmarks:
