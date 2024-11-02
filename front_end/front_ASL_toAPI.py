@@ -7,10 +7,10 @@ from io import BytesIO
 import requests
 import gc
 
-#url_api = "https://dmapi-564221756825.europe-west1.run.app"
+# URL for API
 url_api = "https://sign-interpreter-app-373962339093.europe-west1.run.app"
 
-# Maybe we can try to initialize MediaPipe Hands module outside of functions to avoid repeated instantiation
+# Initialize MediaPipe Hands model outside of functions
 @st.cache_resource
 def load_hand_model():
     return mp.solutions.hands.Hands(static_image_mode=True, max_num_hands=2, min_detection_confidence=0.5, min_tracking_confidence=0.5)
@@ -48,19 +48,26 @@ def extract_hand(source_image):
             hand_region = image[max(0, y_min):y_max, max(0, x_min):x_max]
             debug_image = draw_bounding_rect(debug_image, brect)
             return debug_image, hand_region
-    return None, None
+    return image, None
 
-def send_to_api(hand_region):
-    is_success, buffer = cv.imencode(".jpg", hand_region)
+def send_to_api(hand_region, original_image=None):
+    if hand_region is not None:
+        is_success, buffer = cv.imencode(".jpg", hand_region)
+    else:
+        is_success, buffer = cv.imencode(".jpg", original_image)
+
     if is_success:
         img_bytes = BytesIO(buffer)
-        response = requests.post(url_api +'/predict',
+        response = requests.post(url_api + '/predict',
                                  files={"file": ("hand_image.jpg", img_bytes, "image/jpeg")})
 
         if response.status_code == 200:
             return response.json()
         else:
             st.error("API Error: " + response.json().get("detail", "Unknown error"))
+            if hand_region is not None and original_image is not None:
+                st.write("Retrying with original image.")
+                return send_to_api(None, original_image)
 
 st.title("Show hands!")
 st.write("Take a picture with the computer camera, or upload a file.")
@@ -73,14 +80,15 @@ if camera_image or uploaded_file:
     source_image = camera_image if camera_image else uploaded_file
     processed_image, hand_region = extract_hand(source_image)
 
-    if hand_region is not None:
+    if processed_image is not None:
         col1, col2 = st.columns(2)
         with col1:
             st.image(processed_image, caption="Original", use_column_width=True)
-        with col2:
-            st.image(hand_region, caption="Hand region")
+        if hand_region is not None:
+            with col2:
+                st.image(hand_region, caption="Hand region")
 
-        prediction = send_to_api(hand_region)
+        prediction = send_to_api(hand_region, original_image=np.array(Image.open(source_image).convert("RGB")))
         if prediction:
             st.write(f"Prediction: {prediction['prediction']}")
             st.write(f"Confidence: {prediction['confidence']:.2f}")
